@@ -1,40 +1,38 @@
-const router = require('express').Router();
-const { Post, User, Comment } = require('../../models');
+const express = require('express');
+const router = express.Router();
+const { Post } = require('../../models');
 const withAuth = require('../../utils/auth');
 
-// GET route for fetching all the posts
+// GET all posts
 router.get('/', async (req, res) => {
   try {
-    const postData = await Post.findAll({
-      include: [{ model: User, attributes: ['username'] }],
-    });
+    const postData = await Post.findAll();
     res.status(200).json(postData);
   } catch (err) {
     res.status(500).json(err);
   }
 });
 
-// GET route for fetching a single post
+// GET a single post by id
 router.get('/:id', async (req, res) => {
   try {
-    const postData = await Post.findByPk(req.params.id, {
-      include: [
-        { model: User, attributes: ['username'] },
-        { model: Comment, include: [User] },
-      ],
-    });
+    const postData = await Post.findByPk(req.params.id);
+    if (!postData) {
+      res.status(404).json({ message: 'No post found with this id!' });
+      return;
+    }
     res.status(200).json(postData);
   } catch (err) {
     res.status(500).json(err);
   }
 });
 
-// POST route for creating a new post
+// POST a new post (with authentication)
 router.post('/', withAuth, async (req, res) => {
   try {
     const newPost = await Post.create({
       ...req.body,
-      user_id: req.session.user_id,
+      userId: req.session.userId,
     });
     res.status(200).json(newPost);
   } catch (err) {
@@ -42,7 +40,7 @@ router.post('/', withAuth, async (req, res) => {
   }
 });
 
-// PUT route for updating a post
+// PUT to update a post by id (with authentication)
 router.put('/:id', withAuth, async (req, res) => {
   try {
     const postData = await Post.update(req.body, {
@@ -50,13 +48,17 @@ router.put('/:id', withAuth, async (req, res) => {
         id: req.params.id,
       },
     });
+    if (!postData[0]) {
+      res.status(404).json({ message: 'No post found with this id!' });
+      return;
+    }
     res.status(200).json(postData);
   } catch (err) {
-    res.status(400).json(err);
+    res.status(500).json(err);
   }
 });
 
-// DELETE route for deleting a post
+// DELETE a post by id (with authentication)
 router.delete('/:id', withAuth, async (req, res) => {
   try {
     const postData = await Post.destroy({
@@ -64,23 +66,13 @@ router.delete('/:id', withAuth, async (req, res) => {
         id: req.params.id,
       },
     });
+    if (!postData) {
+      res.status(404).json({ message: 'No post found with this id!' });
+      return;
+    }
     res.status(200).json(postData);
   } catch (err) {
     res.status(500).json(err);
-  }
-});
-
-// POST route for adding a comment to a post
-router.post('/:id/comment', withAuth, async (req, res) => {
-  try {
-    const newComment = await Comment.create({
-      ...req.body,
-      user_id: req.session.user_id,
-      post_id: req.params.id,
-    });
-    res.status(200).json(newComment);
-  } catch (err) {
-    res.status(400).json(err);
   }
 });
 
