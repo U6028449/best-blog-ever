@@ -2,7 +2,7 @@ const path = require('path');
 const express = require('express');
 const session = require('express-session');
 const exphbs = require('express-handlebars');
-const routes = require('./controllers');
+const routes = require('./routes');
 const helpers = require('./utils/helpers');
 const { User, Post, Comment } = require('./models'); // Models imported
 
@@ -45,7 +45,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use(routes);
-
 // Sync models with the database, then start the server
 sequelize.sync({ force: false }).then(() => {
   app.listen(PORT, () => console.log(`Now listening on PORT ${PORT}`));

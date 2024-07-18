@@ -1,0 +1,33 @@
+const express = require('express');
+const router = require('express').Router();
+const { User, Post, Comment } = require('../models');
+// Additional imports as necessary
+
+router.get('/homePage', async (req, res) => {
+  try {
+    // Fetch data needed for the homepage view, including related models as necessary
+    const postData = await Post.findAll({
+      include: [
+        {
+          model: Comment,
+          attributes: ['id', 'commentText', 'postId', 'userId', 'createdAt'],
+          include: {
+            model: User,
+            attributes: ['username']
+          }
+        },
+        {
+          model: User,
+          attributes: ['username']
+        }
+      ]
+    });
+    // Process data as needed and pass it to the Handlebars template
+    res.render('homePage', { posts: postData, loggedIn: req.session.loggedIn });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send(err.toString());
+  }
+});
+
+module.exports = router;
